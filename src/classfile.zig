@@ -73,6 +73,42 @@ pub const ClassFile = struct {
             .attributes = attributes,
         };
     }
+
+    pub fn debug(self: *const Self, indent: usize) void {
+        utils.debug_indent(indent);
+        print("minor_version: {}\n", .{self.minor_version});
+        utils.debug_indent(indent);
+        print("major_version: {}\n", .{self.major_version});
+        utils.debug_indent(indent);
+        print("constant_pool:\n", .{});
+        for (self.constant_pool.items, 0..) |constant_pool_info, i| {
+            constant_pool_info.debug(indent + 1, i + 1);
+        }
+        utils.debug_indent(indent);
+        print("access_flags: {}\n", .{self.access_flags});
+        utils.debug_indent(indent);
+        print("this_class: {}\n", .{self.this_class});
+        utils.debug_indent(indent);
+        print("super_class: {}\n", .{self.super_class});
+        utils.debug_indent(indent);
+        print("interfaces:\n", .{});
+        for (self.interfaces.items) |interface| {
+            utils.debug_indent(indent + 1);
+            print("{}\n", .{interface});
+        }
+        print("fields:\n", .{});
+        for (self.fields.items) |field| {
+            field.debug(indent + 1);
+        }
+        print("methods:\n", .{});
+        for (self.methods.items) |method| {
+            method.debug(indent + 1);
+        }
+        print("attributes:\n", .{});
+        for (self.attributes.items) |attribute| {
+            attribute.debug(indent + 1);
+        }
+    }
 };
 
 pub const ConstantPoolInfo = union(enum) {
@@ -184,10 +220,42 @@ pub const ConstantPoolInfo = union(enum) {
 
     pub fn isDoubleWidth(self: *const Self) bool {
         return switch (self.*) {
-            ConstantPoolInfo.long => true,
-            ConstantPoolInfo.double => true,
+            .long => true,
+            .double => true,
             else => false,
         };
+    }
+
+    pub fn debug(self: *const Self, indent: usize, index: usize) void {
+        utils.debug_indent(indent);
+        switch (self.*) {
+            .utf_8 => |utf_8| {
+                print("#{}: utf-8: \"{s}\"\n", .{ index, utf_8.bytes });
+            },
+            .class => |class| {
+                print("#{}: class:\n", .{index});
+                utils.debug_indent(indent + 1);
+                print("name_index: {}\n", .{class.name_index});
+            },
+            .method_ref => |method_ref| {
+                print("#{}: method_ref:\n", .{index});
+                utils.debug_indent(indent + 1);
+                print("class_index: {}\n", .{method_ref.class_index});
+                utils.debug_indent(indent + 1);
+                print("name_and_type_index: {}\n", .{method_ref.name_and_type_index});
+            },
+            .name_and_type => |name_and_type| {
+                print("#{}: name_and_type:\n", .{index});
+                utils.debug_indent(indent + 1);
+                print("name_index: {}\n", .{name_and_type.name_index});
+                utils.debug_indent(indent + 1);
+                print("descriptor_index: {}\n", .{name_and_type.descriptor_index});
+            },
+            .invalid => {},
+            else => {
+                print("#{}: unimplemented: {any}\n", .{ index, self });
+            },
+        }
     }
 };
 
@@ -215,6 +283,22 @@ pub const FieldInfo = struct {
             .attributes = attributes,
         };
     }
+
+    pub fn debug(self: *const Self, indent: usize) void {
+        utils.debug_indent(indent);
+        print("field:\n", .{});
+        utils.debug_indent(indent + 1);
+        print("access_flags: {}\n", .{self.access_flags});
+        utils.debug_indent(indent + 1);
+        print("name_index: {}\n", .{self.name_index});
+        utils.debug_indent(indent + 1);
+        print("descriptor_index: {}\n", .{self.descriptor_index});
+        utils.debug_indent(indent + 1);
+        print("attributes:\n", .{});
+        for (self.attributes.items) |attribute| {
+            attribute.debug(indent + 2);
+        }
+    }
 };
 
 pub const MethodInfo = struct {
@@ -241,6 +325,22 @@ pub const MethodInfo = struct {
             .attributes = attributes,
         };
     }
+
+    pub fn debug(self: *const Self, indent: usize) void {
+        utils.debug_indent(indent);
+        print("method:\n", .{});
+        utils.debug_indent(indent + 1);
+        print("access_flags: {}\n", .{self.access_flags});
+        utils.debug_indent(indent + 1);
+        print("name_index: {}\n", .{self.name_index});
+        utils.debug_indent(indent + 1);
+        print("descriptor_index: {}\n", .{self.descriptor_index});
+        utils.debug_indent(indent + 1);
+        print("attributes:\n", .{});
+        for (self.attributes.items) |attribute| {
+            attribute.debug(indent + 2);
+        }
+    }
 };
 
 pub const AttributeInfo = union(enum) {
@@ -253,5 +353,16 @@ pub const AttributeInfo = union(enum) {
         const data = try reader.slice(attribute_length);
         _ = allocator;
         return .{ .generic = .{ .attribute_name_index = attribute_name_index, .data = data } };
+    }
+
+    pub fn debug(self: *const Self, indent: usize) void {
+        switch (self.*) {
+            .generic => |generic| {
+                utils.debug_indent(indent);
+                print("generic:\n", .{});
+                utils.debug_indent(indent + 1);
+                print("attribute_name_index: {}\n", .{generic.attribute_name_index});
+            },
+        }
     }
 };

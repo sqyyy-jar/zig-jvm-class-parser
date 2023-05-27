@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const ByteReader = struct {
     const Self = @This();
     bytes: []const u8,
@@ -68,3 +70,9 @@ pub const ByteReader = struct {
         return the_slice;
     }
 };
+
+pub fn debug_indent(indent: usize) void {
+    for (0..indent) |_| {
+        std.debug.print("\t", .{});
+    }
+}
