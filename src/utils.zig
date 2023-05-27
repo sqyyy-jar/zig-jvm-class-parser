@@ -58,4 +58,13 @@ pub const ByteReader = struct {
             dst[i] = byte;
         }
     }
+
+    pub fn slice(self: *Self, length: usize) ![]const u8 {
+        if (self.index + length > self.bytes.len) {
+            return error.OutOfBounds;
+        }
+        const the_slice = self.bytes[self.index .. self.index + length];
+        self.index += length;
+        return the_slice;
+    }
 };
